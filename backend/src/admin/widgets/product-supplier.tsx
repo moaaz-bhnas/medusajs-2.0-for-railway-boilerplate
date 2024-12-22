@@ -1,8 +1,8 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import { clx, Container, Heading, Text } from "@medusajs/ui";
-import { useQuery } from "@tanstack/react-query";
 import { sdk } from "../lib/sdk";
 import { AdminProduct, DetailWidgetProps } from "@medusajs/types";
+import useSWR from "swr";
 
 type AdminroductSupplier = AdminProduct & {
   supplier?: {
@@ -12,14 +12,12 @@ type AdminroductSupplier = AdminProduct & {
 };
 
 const ProductSupplierWidget = ({ data: product }: DetailWidgetProps<AdminProduct>) => {
-  const { data: queryResult } = useQuery({
-    queryFn: () =>
-      sdk.admin.product.retrieve(product.id, {
-        fields: "+supplier.*",
-      }),
-    queryKey: [["product", product.id]],
-  });
-  const supplierName = (queryResult?.product as AdminroductSupplier)?.supplier?.name;
+  const { data } = useSWR(["product", product.id], () =>
+    sdk.admin.product.retrieve(product.id, {
+      fields: "+supplier.*",
+    })
+  );
+  const supplierName = (data?.product as AdminroductSupplier)?.supplier?.name;
 
   return (
     <Container className="divide-y p-0">
@@ -42,7 +40,7 @@ const ProductSupplierWidget = ({ data: product }: DetailWidgetProps<AdminProduct
 };
 
 export const config = defineWidgetConfig({
-  zone: "product.details.before",
+  zone: "product.details.side.after",
 });
 
 export default ProductSupplierWidget;

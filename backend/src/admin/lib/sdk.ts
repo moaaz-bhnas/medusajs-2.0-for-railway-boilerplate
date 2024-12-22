@@ -1,8 +1,8 @@
 import Medusa from "@medusajs/js-sdk";
-import { BACKEND_URL } from "../../lib/constants";
+// import { BACKEND_URL } from "../../lib/constants";
 
 export const sdk = new Medusa({
-  baseUrl: BACKEND_URL,
+  baseUrl: "https://backend-staging-d273.up.railway.app/",
   auth: {
     type: "session",
   },
