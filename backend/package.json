@@ -29,6 +29,7 @@
     "@medusajs/notification-sendgrid": "latest",
     "@medusajs/payment-stripe": "latest",
     "@medusajs/types": "latest",
+    "@medusajs/ui": "4.0.2",
     "@medusajs/utils": "latest",
     "@medusajs/workflow-engine-redis": "latest",
     "@mikro-orm/core": "5.9.7",
