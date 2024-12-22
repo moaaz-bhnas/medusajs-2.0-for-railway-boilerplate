@@ -4,11 +4,11 @@ import { ContainerRegistrationKeys } from "@medusajs/utils";
 import { v4 } from "uuid";
 
 const shopifyAPI = async () => {
-  const endpoint = "https://0b3b7d-80.myshopify.com/admin/api/2024-01/graphql.json";
+  const endpoint = `https://0b3b7d-80.myshopify.com/admin/api/2024-01/graphql.json`;
 
   const query = `
       {
-        products(last: 50) {
+        products(first: 5, sortKey: ID, reverse: true) {
           edges {
             node {
               id
@@ -50,7 +50,7 @@ const shopifyAPI = async () => {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Shopify-Access-Token": "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",
+      "X-Shopify-Access-Token": "X-Shopify-Access-Token",
     },
     body: JSON.stringify({ query }),
   });
