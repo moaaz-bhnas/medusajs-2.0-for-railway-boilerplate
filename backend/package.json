@@ -15,6 +15,7 @@
   "scripts": {
     "build": "medusa build && node src/scripts/postBuild.js",
     "seed": "medusa exec ./src/scripts/seed.ts",
+    "shopify": "medusa exec ./src/scripts/migrate-shopify-products.ts",
     "ib": "init-backend",
     "start": "init-backend && cd .medusa/server && medusa start --verbose",
     "dev": "medusa develop",
@@ -46,6 +47,7 @@
     "resend": "4.0.1",
     "swr": "^2.2.5",
     "ulid": "^2.3.0",
+    "uuid": "^11.0.3",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -4,6 +4,12 @@ import { assertValue } from "../utils/assert-value";
 loadEnv(process.env.NODE_ENV || "development", process.cwd());
 
 /**
+ * Shopify credentials
+ */
+export const SHOPIFY_DOMAIN = process.env.SHOPIFY_DOMAIN;
+export const SHOPIFY_PASSWORD = process.env.SHOPIFY_PASSWORD;
+
+/**
  * Is development environment
  */
 export const IS_DEV = process.env.NODE_ENV === "development";
