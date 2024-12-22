@@ -56,7 +56,6 @@ const shopifyAPI = async () => {
   });
 
   const data = await response.json();
-  console.log("🙀", data);
 
   return data.data.products.edges.map((edge) => edge.node);
 };
