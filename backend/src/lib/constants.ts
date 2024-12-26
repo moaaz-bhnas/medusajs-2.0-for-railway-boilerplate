@@ -15,7 +15,7 @@ export const SHOPIFY_PASSWORD = process.env.SHOPIFY_PASSWORD;
 export const IS_DEV = process.env.NODE_ENV === "development";
 
 /**
- * Public URL for the backend
+ * Public URL for the backen
  */
 export const BACKEND_URL = process.env.RAILWAY_PUBLIC_DOMAIN_VALUE ?? "http://localhost:9000";
 
