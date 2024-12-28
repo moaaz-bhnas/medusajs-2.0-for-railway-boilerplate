@@ -4,6 +4,14 @@ import { assertValue } from "../utils/assert-value";
 loadEnv(process.env.NODE_ENV || "development", process.cwd());
 
 /**
+ * Fawry credentials
+ */
+export const FAWRY_BASE_URL = assertValue(
+  process.env.FAWRY_BASE_URL,
+  "Environment variable for FAWRY_BASE_URL is not set"
+);
+
+/**
  * Shopify credentials
  */
 export const SHOPIFY_DOMAIN = process.env.SHOPIFY_DOMAIN;
