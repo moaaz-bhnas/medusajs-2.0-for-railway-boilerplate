@@ -22,6 +22,8 @@ const Payment = ({
   cart: any
   availablePaymentMethods: any[]
 }) => {
+  console.log("🟢", cart)
+
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession: any) => paymentSession.status === "pending"
   )
@@ -89,9 +91,12 @@ const Payment = ({
         isStripeFunc(selectedPaymentMethod) && !activeSession
 
       if (!activeSession) {
-        await initiatePaymentSession(cart, {
+        const result = await initiatePaymentSession(cart, {
           provider_id: selectedPaymentMethod,
+          context: { extra: { cart } },
         })
+
+        console.log("🥰", result)
       }
 
       if (!shouldInputCard) {
@@ -112,6 +117,8 @@ const Payment = ({
   useEffect(() => {
     setError(null)
   }, [isOpen])
+
+  console.log("🟢🟢", { activeSession })
 
   return (
     <div className="bg-white">

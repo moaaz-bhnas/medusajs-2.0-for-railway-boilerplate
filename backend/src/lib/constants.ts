@@ -10,6 +10,18 @@ export const FAWRY_BASE_URL = assertValue(
   process.env.FAWRY_BASE_URL,
   "Environment variable for FAWRY_BASE_URL is not set"
 );
+export const FAWRY_MERCHANT_CODE = assertValue(
+  process.env.FAWRY_MERCHANT_CODE,
+  "Environment variable for FAWRY_MERCHANT_CODE is not set"
+);
+export const FAWRY_SECURITY_CODE = assertValue(
+  process.env.FAWRY_SECURITY_CODE,
+  "Environment variable for FAWRY_SECURITY_CODE is not set"
+);
+export const FAWRY_PAYMENT_EXPIRY = assertValue(
+  process.env.FAWRY_PAYMENT_EXPIRY,
+  "Environment variable for FAWRY_PAYMENT_EXPIRY is not set"
+);
 
 /**
  * Shopify credentials

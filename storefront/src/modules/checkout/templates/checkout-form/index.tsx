@@ -24,6 +24,8 @@ export default async function CheckoutForm({
     return null
   }
 
+  console.log("🤯", paymentMethods)
+
   return (
     <div>
       <div className="w-full grid grid-cols-1 gap-y-8">
