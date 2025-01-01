@@ -363,6 +363,8 @@ export async function placeOrder() {
     })
     .catch(medusaError)
 
+  console.log("🤯🤯", getAuthHeaders(), cartRes)
+
   if (cartRes?.type === "order") {
     const countryCode =
       cartRes.order.shipping_address?.country_code?.toLowerCase()

@@ -31,6 +31,10 @@ export const paymentInfoMap: Record<
     icon: <CreditCard />,
   },
   // Add more payment providers here
+  pp_fawry_fawry: {
+    title: "Fawry",
+    icon: <CreditCard />,
+  },
 }
 
 // This only checks if it is native stripe for card payments, it ignores the other stripe-based providers

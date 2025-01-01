@@ -22,6 +22,10 @@ export const FAWRY_PAYMENT_EXPIRY = assertValue(
   process.env.FAWRY_PAYMENT_EXPIRY,
   "Environment variable for FAWRY_PAYMENT_EXPIRY is not set"
 );
+export const FAWRY_RETURN_PATH = assertValue(
+  process.env.FAWRY_RETURN_PATH,
+  "Environment variable for FAWRY_RETURN_PATH is not set"
+);
 
 /**
  * Shopify credentials
@@ -33,6 +37,11 @@ export const SHOPIFY_PASSWORD = process.env.SHOPIFY_PASSWORD;
  * Is development environment
  */
 export const IS_DEV = process.env.NODE_ENV === "development";
+
+/**
+ * Public url for the frontend
+ */
+export const STORE_URL = assertValue(process.env.STORE_URL, "Environment variable for STORE_URL is not set");
 
 /**
  * Public url for the backend

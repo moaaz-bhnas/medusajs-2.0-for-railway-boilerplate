@@ -11,10 +11,39 @@ import {
   CartLineItemDTO,
 } from "@medusajs/types";
 import { AbstractPaymentProvider, MedusaError } from "@medusajs/utils";
-import { FAWRY_BASE_URL, FAWRY_MERCHANT_CODE, FAWRY_PAYMENT_EXPIRY, FAWRY_SECURITY_CODE } from "lib/constants";
+import {
+  FAWRY_BASE_URL,
+  FAWRY_MERCHANT_CODE,
+  FAWRY_PAYMENT_EXPIRY,
+  FAWRY_RETURN_PATH,
+  FAWRY_SECURITY_CODE,
+  STORE_URL,
+} from "lib/constants";
 import fp from "lodash/fp";
 import crypto from "crypto";
 import axios from "axios";
+
+type ChargeItem = {
+  itemId: string;
+  description: string;
+  price: number;
+  quantity: number;
+  imageUrl: string;
+};
+
+interface ChargeRequest {
+  merchantCode: string;
+  merchantRefNum: string;
+  customerMobile: string;
+  customerEmail: string;
+  customerName: string;
+  customerProfileId: string;
+  language: "en-gb" | "ar-eg";
+  chargeItems: ChargeItem[];
+  returnUrl: string;
+  authCaptureModePayment: boolean;
+  signature: string;
+}
 
 type Options = {
   apiKey: string;
@@ -46,15 +75,15 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
     }
   }
 
-  private generateSignature(cart: CartDTO) {
+  private generateSignature(cart: CartDTO): string {
     const merchantRefNum = cart.id;
     const customerProfileId = cart.customer_id;
-    const returnUrl = "";
+    const returnUrl = `${STORE_URL}/${FAWRY_RETURN_PATH}`;
     const itemsDetails = fp.flow(
-      fp.sortBy("id"),
-      fp.map((item: CartLineItemDTO) => `${item.id}${item.quantity}${Number(item.unit_price).toFixed(2)}`),
+      this.getCheckoutItems,
+      fp.map((item) => `${item.itemId}${item.quantity}${Number(item.price).toFixed(2)}`),
       fp.join("")
-    )(cart.items);
+    )(cart);
 
     const dataToHash = `${FAWRY_MERCHANT_CODE}${merchantRefNum}${customerProfileId}${returnUrl}${itemsDetails}${FAWRY_SECURITY_CODE}`;
 
@@ -63,27 +92,66 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
     return signature;
   }
 
-  private buildCheckoutRequest(cart: CartDTO) {
-    const request = {
+  private getCheckoutItems(cart: CartDTO): ChargeItem[] {
+    const addDiscountItem = fp.curry(function addDiscountItem(cart: CartDTO, lineItems: ChargeItem[]) {
+      lineItems = fp.cloneDeep(lineItems);
+      if (Number(cart.discount_total) > 0) {
+        lineItems.push({
+          itemId: "discount",
+          description: "Discount",
+          price: -Number(cart.discount_total),
+          quantity: 1,
+          imageUrl: "",
+        });
+      }
+      return lineItems;
+    });
+
+    const addShipingItem = fp.curry(function addDiscountItem(cart: CartDTO, lineItems: ChargeItem[]) {
+      lineItems = fp.cloneDeep(lineItems);
+      if (Number(cart.shipping_total) > 0) {
+        lineItems.push({
+          itemId: "shipping",
+          description: "Shipping",
+          price: Number(cart.shipping_total),
+          quantity: 1,
+          imageUrl: "",
+        });
+      }
+      return lineItems;
+    });
+
+    function mapCartItemToChargeItem(item: CartLineItemDTO): ChargeItem {
+      return {
+        itemId: item.id,
+        description: item.title,
+        price: Number(item.unit_price),
+        quantity: Number(item.quantity),
+        imageUrl: item.thumbnail,
+      };
+    }
+
+    const result = fp.flow(
+      fp.map(mapCartItemToChargeItem),
+      addDiscountItem(cart),
+      addShipingItem(cart),
+      fp.sortBy<ChargeItem>("itemId")
+    )(cart.items);
+
+    return result;
+  }
+
+  private buildCheckoutRequest(cart: CartDTO): ChargeRequest {
+    const request: ChargeRequest = {
       merchantCode: FAWRY_MERCHANT_CODE,
       merchantRefNum: cart.id,
       customerMobile: cart.shipping_address.phone,
       customerEmail: cart.email,
       customerName: cart.shipping_address.first_name + " " + cart.shipping_address.last_name,
       customerProfileId: cart.customer_id,
-      // paymentExpiry: FAWRY_PAYMENT_EXPIRY,
       language: "ar-eg",
-      chargeItems: fp.flow(
-        fp.sortBy("id"),
-        fp.map((item: CartLineItemDTO) => ({
-          itemId: item.id,
-          description: item.title,
-          price: item.unit_price,
-          quantity: item.quantity,
-          imageUrl: item.thumbnail,
-        }))
-      )(cart.items),
-      returnUrl: "",
+      chargeItems: this.getCheckoutItems(cart),
+      returnUrl: `${STORE_URL}/${FAWRY_RETURN_PATH}`,
       authCaptureModePayment: false,
       signature: this.generateSignature(cart),
     };
