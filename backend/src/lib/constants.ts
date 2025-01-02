@@ -4,6 +4,30 @@ import { assertValue } from "../utils/assert-value";
 loadEnv(process.env.NODE_ENV || "development", process.cwd());
 
 /**
+ * Fawry credentials
+ */
+export const FAWRY_BASE_URL = assertValue(
+  process.env.FAWRY_BASE_URL,
+  "Environment variable for FAWRY_BASE_URL is not set"
+);
+export const FAWRY_MERCHANT_CODE = assertValue(
+  process.env.FAWRY_MERCHANT_CODE,
+  "Environment variable for FAWRY_MERCHANT_CODE is not set"
+);
+export const FAWRY_SECURITY_CODE = assertValue(
+  process.env.FAWRY_SECURITY_CODE,
+  "Environment variable for FAWRY_SECURITY_CODE is not set"
+);
+export const FAWRY_PAYMENT_EXPIRY = assertValue(
+  process.env.FAWRY_PAYMENT_EXPIRY,
+  "Environment variable for FAWRY_PAYMENT_EXPIRY is not set"
+);
+export const FAWRY_RETURN_PATH = assertValue(
+  process.env.FAWRY_RETURN_PATH,
+  "Environment variable for FAWRY_RETURN_PATH is not set"
+);
+
+/**
  * Shopify credentials
  */
 export const SHOPIFY_DOMAIN = process.env.SHOPIFY_DOMAIN;
@@ -13,6 +37,11 @@ export const SHOPIFY_PASSWORD = process.env.SHOPIFY_PASSWORD;
  * Is development environment
  */
 export const IS_DEV = process.env.NODE_ENV === "development";
+
+/**
+ * Public url for the frontend
+ */
+export const STORE_URL = assertValue(process.env.STORE_URL, "Environment variable for STORE_URL is not set");
 
 /**
  * Public url for the backend

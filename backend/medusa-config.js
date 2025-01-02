@@ -45,6 +45,21 @@ const medusaConfig = {
   },
   modules: [
     {
+      resolve: "@medusajs/medusa/payment",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/fawry",
+            id: "fawry",
+            options: {
+              // provider options...
+              apiKey: "...",
+            },
+          },
+        ],
+      },
+    },
+    {
       resolve: "./src/modules/supplier",
     },
     {

@@ -4,12 +4,18 @@ import { Button } from "@medusajs/ui"
 import { OnApproveActions, OnApproveData } from "@paypal/paypal-js"
 import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
-import React, { useState } from "react"
+import React, { use, useEffect, useState } from "react"
 import ErrorMessage from "../error-message"
 import Spinner from "@modules/common/icons/spinner"
 import { placeOrder } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
-import { isManual, isPaypal, isStripe } from "@lib/constants"
+import { isFawry, isManual, isPaypal, isStripe } from "@lib/constants"
+import {
+  ReadonlyURLSearchParams,
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
+import { FawryChargeResponse } from "types/fawry"
 
 type PaymentButtonProps = {
   cart: HttpTypes.StoreCart
@@ -58,27 +64,117 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
           data-testid={dataTestId}
         />
       )
+    case isFawry(paymentSession?.provider_id):
+      return (
+        <FawryPaymentButton
+          notReady={notReady}
+          cart={cart}
+          data-testid={dataTestId}
+        />
+      )
     default:
       return <Button disabled>Select a payment method</Button>
   }
 }
 
-const GiftCardPaymentButton = () => {
-  const [submitting, setSubmitting] = useState(false)
+// const GiftCardPaymentButton = () => {
+//   const [submitting, setSubmitting] = useState(false)
 
-  const handleOrder = async () => {
-    setSubmitting(true)
+//   const handleOrder = async () => {
+//     setSubmitting(true)
+//     await placeOrder()
+//   }
+
+//   return (
+//     <Button
+//       onClick={handleOrder}
+//       isLoading={submitting}
+//       data-testid="submit-order-button"
+//     >
+//       Place order
+//     </Button>
+//   )
+// }
+
+const FawryPaymentButton = ({
+  cart,
+  notReady,
+  "data-testid": dataTestId,
+}: {
+  cart: HttpTypes.StoreCart
+  notReady: boolean
+  "data-testid"?: string
+}) => {
+  const [submitting, setSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  function getChargeResponse() {
+    const referenceNumber = searchParams.get("referenceNumber")
+
+    if (referenceNumber) {
+      const queryParams: { [key: string]: string } = {}
+      searchParams.forEach((value, key) => {
+        queryParams[key] = value
+      })
+      return queryParams as unknown as FawryChargeResponse
+    }
+
+    return null
+  }
+
+  useEffect(
+    function handleChargeResponse() {
+      const chargeResponse = getChargeResponse()
+      if (!chargeResponse) return
+
+      setSubmitting(true)
+      if (chargeResponse.orderStatus == "PAID") {
+        onPaymentCompleted()
+      }
+    },
+    [searchParams]
+  )
+
+  const session = cart.payment_collection?.payment_sessions?.find(
+    (s) => s.status === "pending"
+  )
+
+  const onPaymentCompleted = async () => {
     await placeOrder()
+      .catch((err) => {
+        setErrorMessage(err.message)
+      })
+      .finally(() => {
+        setSubmitting(false)
+      })
+  }
+
+  const handlePayment = async () => {
+    setSubmitting(true)
+
+    const fawryCheckoutUrl = session?.data.checkoutUrl as string
+    if (fawryCheckoutUrl) router.push(fawryCheckoutUrl)
   }
 
   return (
-    <Button
-      onClick={handleOrder}
-      isLoading={submitting}
-      data-testid="submit-order-button"
-    >
-      Place order
-    </Button>
+    <>
+      <Button
+        disabled={notReady}
+        onClick={handlePayment}
+        size="large"
+        isLoading={submitting}
+        data-testid={dataTestId}
+      >
+        Place order
+      </Button>
+      <ErrorMessage
+        error={errorMessage}
+        data-testid="fawry-payment-error-message"
+      />
+    </>
   )
 }
 

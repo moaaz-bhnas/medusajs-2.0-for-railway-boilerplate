@@ -31,6 +31,10 @@ export const paymentInfoMap: Record<
     icon: <CreditCard />,
   },
   // Add more payment providers here
+  pp_fawry_fawry: {
+    title: "Fawry",
+    icon: <CreditCard />,
+  },
 }
 
 // This only checks if it is native stripe for card payments, it ignores the other stripe-based providers
@@ -42,6 +46,9 @@ export const isPaypal = (providerId?: string) => {
 }
 export const isManual = (providerId?: string) => {
   return providerId?.startsWith("pp_system_default")
+}
+export const isFawry = (providerId?: string) => {
+  return providerId?.startsWith("pp_fawry")
 }
 
 // Add currencies that don't need to be divided by 100
