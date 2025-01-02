@@ -77,24 +77,24 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   }
 }
 
-const GiftCardPaymentButton = () => {
-  const [submitting, setSubmitting] = useState(false)
+// const GiftCardPaymentButton = () => {
+//   const [submitting, setSubmitting] = useState(false)
 
-  const handleOrder = async () => {
-    setSubmitting(true)
-    await placeOrder()
-  }
+//   const handleOrder = async () => {
+//     setSubmitting(true)
+//     await placeOrder()
+//   }
 
-  return (
-    <Button
-      onClick={handleOrder}
-      isLoading={submitting}
-      data-testid="submit-order-button"
-    >
-      Place order
-    </Button>
-  )
-}
+//   return (
+//     <Button
+//       onClick={handleOrder}
+//       isLoading={submitting}
+//       data-testid="submit-order-button"
+//     >
+//       Place order
+//     </Button>
+//   )
+// }
 
 const FawryPaymentButton = ({
   cart,
@@ -125,8 +125,6 @@ const FawryPaymentButton = ({
     return null
   }
 
-  console.log("🥰", getChargeResponse())
-
   useEffect(
     function handleChargeResponse() {
       const chargeResponse = getChargeResponse()
@@ -147,11 +145,9 @@ const FawryPaymentButton = ({
   const onPaymentCompleted = async () => {
     await placeOrder()
       .catch((err) => {
-        console.log("🔴🔴", err)
         setErrorMessage(err.message)
       })
       .finally(() => {
-        console.log("🟢🟢 finally!")
         setSubmitting(false)
       })
   }

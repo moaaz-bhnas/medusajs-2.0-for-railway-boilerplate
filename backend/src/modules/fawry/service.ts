@@ -22,6 +22,7 @@ import {
 import fp from "lodash/fp";
 import crypto from "crypto";
 import axios from "axios";
+import { stat } from "fs";
 
 type ChargeItem = {
   itemId: string;
@@ -62,8 +63,6 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
 
   constructor(container: InjectedDependencies, options: Options) {
     super(container, options);
-    console.log("🤯", Object.keys(container));
-    console.log("🚀", Object.keys(options));
 
     this.options_ = options;
     this.logger_ = container.logger;
@@ -180,37 +179,41 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
       };
     }
   }
-  capturePayment(
-    paymentData: Record<string, unknown>
-  ): Promise<PaymentProviderError | PaymentProviderSessionResponse["data"]> {
-    throw new Error("Method not implemented.");
-  }
-  authorizePayment(
+
+  async authorizePayment(
     paymentSessionData: Record<string, unknown>,
     context: Record<string, unknown>
   ): Promise<PaymentProviderError | { status: PaymentSessionStatus; data: PaymentProviderSessionResponse["data"] }> {
-    throw new Error("Method not implemented.");
+    return {
+      data: paymentSessionData,
+      status: "captured",
+    };
   }
+
+  async capturePayment(
+    paymentData: Record<string, unknown>
+  ): Promise<PaymentProviderError | PaymentProviderSessionResponse["data"]> {
+    const externalId = paymentData.id;
+
+    try {
+      return {
+        id: externalId,
+      };
+    } catch (e) {
+      return {
+        error: e,
+        code: "unknown",
+        detail: e,
+      };
+    }
+  }
+
   cancelPayment(
     paymentData: Record<string, unknown>
   ): Promise<PaymentProviderError | PaymentProviderSessionResponse["data"]> {
     throw new Error("Method not implemented.");
   }
-  //   async initiatePayment(
-  //     context: CreatePaymentProviderSession
-  //   ): Promise<PaymentProviderError | PaymentProviderSessionResponse> {
-  //     const { amount, currency_code, context: customerDetails } = context;
 
-  //     try {
-  //       const response = await axios.post(`${FAWRY_BASE_URL}/fawrypay-api/api/payments/init`);
-  //     } catch (error) {
-  //       return {
-  //         error: error.message,
-  //         code: "unknown",
-  //         detail: error,
-  //       };
-  //     }
-  //   }
   deletePayment(
     paymentSessionData: Record<string, unknown>
   ): Promise<PaymentProviderError | PaymentProviderSessionResponse["data"]> {
