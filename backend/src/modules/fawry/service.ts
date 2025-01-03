@@ -235,7 +235,9 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
   }
 
   async getWebhookActionAndData(payload: ProviderWebhookPayload["payload"]): Promise<WebhookActionResult> {
-    this.logger_.debug(`⚡🔵 Fawry (webhook): triggered with payload: ${JSON.stringify(payload)}`);
+    const activityId = this.logger_.activity(
+      `⚡🔵 Fawry (webhook): triggered with payload: ${JSON.stringify(payload)}`
+    );
 
     const { data } = payload;
 
