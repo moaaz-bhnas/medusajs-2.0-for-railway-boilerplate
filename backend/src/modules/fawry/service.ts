@@ -176,6 +176,9 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
   async initiatePayment({
     context,
   }: CreatePaymentProviderSession): Promise<PaymentProviderError | PaymentProviderSessionResponse> {
+    const activityId = this.logger_.activity(
+      `⚡🔵 Fawry (initiatePayment): Initiating a payment for cart: ${(context.extra.cart as CartDTO).id}`
+    );
     const checkoutRequest = this.buildCheckoutRequest(context.extra.cart as CartDTO);
 
     try {
@@ -185,7 +188,8 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
         },
       });
 
-      this.logger_.info(
+      this.logger_.success(
+        activityId,
         `⚡🟢 Fawry (initiatePayment): Successfully created checkout URL: ${response.data} for cart: ${
           (context.extra.cart as CartDTO).id
         }`
@@ -193,9 +197,11 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
 
       return { data: { checkoutUrl: response.data } };
     } catch (error) {
-      this.logger_.error(
-        `⚡🔴 Fawry (initiatePayment): Failed to create checkout URL for cart: ${(context.extra.cart as CartDTO).id}`,
-        error
+      this.logger_.failure(
+        activityId,
+        `⚡🔴 Fawry (initiatePayment): Failed to create checkout URL for cart: ${
+          (context.extra.cart as CartDTO).id
+        } with error: ${error.message}`
       );
 
       return {
