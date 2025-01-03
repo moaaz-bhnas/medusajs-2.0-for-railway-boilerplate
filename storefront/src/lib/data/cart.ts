@@ -17,12 +17,14 @@ export async function retrieveCart() {
     return null
   }
 
-  return await sdk.store.cart
+  const result = await sdk.store.cart
     .retrieve(cartId, {}, { next: { tags: ["cart"] }, ...getAuthHeaders() })
     .then(({ cart }) => cart)
     .catch(() => {
       return null
     })
+
+  return result
 }
 
 export async function getOrSetCart(countryCode: string) {

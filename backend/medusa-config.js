@@ -20,6 +20,11 @@ import {
   MINIO_ACCESS_KEY,
   MINIO_SECRET_KEY,
   MINIO_BUCKET,
+  FAWRY_MERCHANT_CODE,
+  STORE_URL,
+  FAWRY_RETURN_PATH,
+  FAWRY_SECURITY_CODE,
+  FAWRY_BASE_URL,
 } from "lib/constants";
 import { resolve } from "path";
 
@@ -45,6 +50,7 @@ const medusaConfig = {
   },
   modules: [
     {
+      key: Modules.PAYMENT,
       resolve: "@medusajs/medusa/payment",
       options: {
         providers: [
@@ -52,10 +58,24 @@ const medusaConfig = {
             resolve: "./src/modules/fawry",
             id: "fawry",
             options: {
-              // provider options...
-              apiKey: "...",
+              merchantCode: FAWRY_MERCHANT_CODE,
+              securityCode: FAWRY_SECURITY_CODE,
+              baseUrl: FAWRY_BASE_URL,
+              returnUrl: `${STORE_URL}/${FAWRY_RETURN_PATH}`,
             },
           },
+          ...(STRIPE_API_KEY && STRIPE_WEBHOOK_SECRET
+            ? [
+                {
+                  resolve: "@medusajs/payment-stripe",
+                  id: "stripe",
+                  options: {
+                    apiKey: STRIPE_API_KEY,
+                    webhookSecret: STRIPE_WEBHOOK_SECRET,
+                  },
+                },
+              ]
+            : []),
         ],
       },
     },
@@ -151,26 +171,26 @@ const medusaConfig = {
           },
         ]
       : []),
-    ...(STRIPE_API_KEY && STRIPE_WEBHOOK_SECRET
-      ? [
-          {
-            key: Modules.PAYMENT,
-            resolve: "@medusajs/payment",
-            options: {
-              providers: [
-                {
-                  resolve: "@medusajs/payment-stripe",
-                  id: "stripe",
-                  options: {
-                    apiKey: STRIPE_API_KEY,
-                    webhookSecret: STRIPE_WEBHOOK_SECRET,
-                  },
-                },
-              ],
-            },
-          },
-        ]
-      : []),
+    // ...(STRIPE_API_KEY && STRIPE_WEBHOOK_SECRET
+    //   ? [
+    //       {
+    //         key: Modules.PAYMENT,
+    //         resolve: "@medusajs/payment",
+    //         options: {
+    //           providers: [
+    //             {
+    //               resolve: "@medusajs/payment-stripe",
+    //               id: "stripe",
+    //               options: {
+    //                 apiKey: STRIPE_API_KEY,
+    //                 webhookSecret: STRIPE_WEBHOOK_SECRET,
+    //               },
+    //             },
+    //           ],
+    //         },
+    //       },
+    //     ]
+    //   : []),
   ],
   plugins: [],
 };

@@ -11,18 +11,9 @@ import {
   CartLineItemDTO,
 } from "@medusajs/types";
 import { AbstractPaymentProvider, MedusaError } from "@medusajs/utils";
-import {
-  FAWRY_BASE_URL,
-  FAWRY_MERCHANT_CODE,
-  FAWRY_PAYMENT_EXPIRY,
-  FAWRY_RETURN_PATH,
-  FAWRY_SECURITY_CODE,
-  STORE_URL,
-} from "lib/constants";
 import fp from "lodash/fp";
 import crypto from "crypto";
 import axios from "axios";
-import { stat } from "fs";
 
 type ChargeItem = {
   itemId: string;
@@ -47,7 +38,10 @@ interface ChargeRequest {
 }
 
 type Options = {
-  apiKey: string;
+  merchantCode: string;
+  securityCode: string;
+  baseUrl: string;
+  returnUrl: string;
 };
 
 type InjectedDependencies = {
@@ -69,22 +63,26 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
   }
 
   static validateOptions(options: Record<any, any>) {
-    if (!options.apiKey) {
-      throw new MedusaError(MedusaError.Types.INVALID_DATA, `API key is required in the Fawry provider's options.`);
+    const requiredFields = ["merchantCode", "securityCode", "baseUrl", "returnUrl"];
+
+    for (const field of requiredFields) {
+      if (!options[field]) {
+        throw new MedusaError(MedusaError.Types.INVALID_DATA, `${field} is required in the provider's options`);
+      }
     }
   }
 
   private generateSignature(cart: CartDTO): string {
     const merchantRefNum = cart.id;
     const customerProfileId = cart.customer_id;
-    const returnUrl = `${STORE_URL}/${FAWRY_RETURN_PATH}`;
     const itemsDetails = fp.flow(
       this.getCheckoutItems,
       fp.map((item) => `${item.itemId}${item.quantity}${Number(item.price).toFixed(2)}`),
       fp.join("")
     )(cart);
+    const { returnUrl, merchantCode, securityCode } = this.options_;
 
-    const dataToHash = `${FAWRY_MERCHANT_CODE}${merchantRefNum}${customerProfileId}${returnUrl}${itemsDetails}${FAWRY_SECURITY_CODE}`;
+    const dataToHash = `${merchantCode}${merchantRefNum}${customerProfileId}${returnUrl}${itemsDetails}${securityCode}`;
 
     const signature = crypto.createHash("sha256").update(dataToHash).digest("hex");
 
@@ -141,8 +139,9 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
   }
 
   private buildCheckoutRequest(cart: CartDTO): ChargeRequest {
+    const { merchantCode, returnUrl } = this.options_;
     const request: ChargeRequest = {
-      merchantCode: FAWRY_MERCHANT_CODE,
+      merchantCode,
       merchantRefNum: cart.id,
       customerMobile: cart.shipping_address.phone,
       customerEmail: cart.email,
@@ -150,7 +149,7 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
       customerProfileId: cart.customer_id,
       language: "ar-eg",
       chargeItems: this.getCheckoutItems(cart),
-      returnUrl: `${STORE_URL}/${FAWRY_RETURN_PATH}`,
+      returnUrl,
       authCaptureModePayment: false,
       signature: this.generateSignature(cart),
     };
@@ -164,7 +163,7 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
     const checkoutRequest = this.buildCheckoutRequest(context.extra.cart as CartDTO);
 
     try {
-      const response = await axios.post(`${FAWRY_BASE_URL}/fawrypay-api/api/payments/init`, checkoutRequest, {
+      const response = await axios.post(`${this.options_.baseUrl}/fawrypay-api/api/payments/init`, checkoutRequest, {
         headers: {
           "Content-Type": "application/json",
         },
