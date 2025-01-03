@@ -185,8 +185,19 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
         },
       });
 
+      this.logger_.info(
+        `⚡🟢 Fawry (initiatePayment): Successfully created checkout URL: ${response.data} for cart: ${
+          (context.extra.cart as CartDTO).id
+        }`
+      );
+
       return { data: { checkoutUrl: response.data } };
     } catch (error) {
+      this.logger_.error(
+        `⚡🔴 Fawry (initiatePayment): Failed to create checkout URL for cart: ${(context.extra.cart as CartDTO).id}`,
+        error
+      );
+
       return {
         error: error.message,
         code: "unknown",
@@ -224,6 +235,8 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
   }
 
   async getWebhookActionAndData(payload: ProviderWebhookPayload["payload"]): Promise<WebhookActionResult> {
+    this.logger_.debug(`⚡🔵 Fawry (webhook): triggered with payload: ${JSON.stringify(payload)}`);
+
     const { data } = payload;
 
     switch (data.orderStatus) {
