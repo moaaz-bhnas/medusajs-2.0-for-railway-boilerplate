@@ -10,10 +10,11 @@ import {
   CartDTO,
   CartLineItemDTO,
 } from "@medusajs/types";
-import { AbstractPaymentProvider, MedusaError } from "@medusajs/utils";
+import { AbstractPaymentProvider, BigNumber, MedusaError } from "@medusajs/utils";
 import fp from "lodash/fp";
 import crypto from "crypto";
 import axios from "axios";
+import { BACKEND_URL } from "lib/constants";
 
 type ChargeItem = {
   itemId: string;
@@ -33,8 +34,22 @@ interface ChargeRequest {
   language: "en-gb" | "ar-eg";
   chargeItems: ChargeItem[];
   returnUrl: string;
+  orderWebHookUrl?: string;
   authCaptureModePayment: boolean;
   signature: string;
+}
+
+interface WebhookPayload {
+  requestId: string;
+  fawryRefNumber: string;
+  merchantRefNumber: string;
+  customerName?: string;
+  customerMail: string;
+  paymentAmount: number;
+  orderAmount: number;
+  fawryFees: number;
+  orderStatus: "NEW" | "PAID" | "CANCELLED" | "REFUNDED" | "EXPIRED" | "PARTIAL_REFUNDED" | "FAILD";
+  failureReason?: string;
 }
 
 type Options = {
@@ -150,6 +165,7 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
       language: "ar-eg",
       chargeItems: this.getCheckoutItems(cart),
       returnUrl,
+      orderWebHookUrl: `${BACKEND_URL}/admin/hooks/payment/${FawryProviderService.identifier}_fawry`,
       authCaptureModePayment: false,
       signature: this.generateSignature(cart),
     };
@@ -207,6 +223,41 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
     }
   }
 
+  async getWebhookActionAndData(payload: ProviderWebhookPayload["payload"]): Promise<WebhookActionResult> {
+    const { data } = payload;
+
+    switch (data.orderStatus) {
+      case "NEW":
+        return {
+          action: "authorized",
+          data: {
+            session_id: (data.metadata as Record<string, any>).session_id,
+            amount: new BigNumber(data.paymentAmount as number),
+          },
+        };
+      case "PAID":
+        return {
+          action: "captured",
+          data: {
+            session_id: (data.metadata as Record<string, any>).session_id,
+            amount: new BigNumber(data.paymentAmount as number),
+          },
+        };
+      case "FAILD":
+        return {
+          action: "failed",
+          data: {
+            session_id: (data.metadata as Record<string, any>).session_id,
+            amount: new BigNumber(data.paymentAmount as number),
+          },
+        };
+      default:
+        return {
+          action: "not_supported",
+        };
+    }
+  }
+
   cancelPayment(
     paymentData: Record<string, unknown>
   ): Promise<PaymentProviderError | PaymentProviderSessionResponse["data"]> {
@@ -233,9 +284,6 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
     throw new Error("Method not implemented.");
   }
   updatePayment(context: UpdatePaymentProviderSession): Promise<PaymentProviderError | PaymentProviderSessionResponse> {
-    throw new Error("Method not implemented.");
-  }
-  getWebhookActionAndData(data: ProviderWebhookPayload["payload"]): Promise<WebhookActionResult> {
     throw new Error("Method not implemented.");
   }
 }
