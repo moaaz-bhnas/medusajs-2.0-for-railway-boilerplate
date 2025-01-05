@@ -87,11 +87,11 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
     }
   }
 
-  private generateSignature(cart: CartDTO): string {
+  private generateSignature(cart: CartDTO, totalPrice: number): string {
     const merchantRefNum = cart.id;
     const customerProfileId = cart.customer_id;
     const itemsDetails = fp.flow(
-      this.getCheckoutItems,
+      this.getCheckoutItems(totalPrice),
       fp.map((item) => `${item.itemId}${item.quantity}${Number(item.price).toFixed(2)}`),
       fp.join("")
     )(cart);
@@ -104,7 +104,7 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
     return signature;
   }
 
-  private getCheckoutItems(cart: CartDTO): ChargeItem[] {
+  private getCheckoutItems = fp.curry(function getCheckoutItems(totalPrice: number, cart: CartDTO): ChargeItem[] {
     const addDiscountItem = fp.curry(function addDiscountItem(cart: CartDTO, lineItems: ChargeItem[]) {
       lineItems = fp.cloneDeep(lineItems);
       if (Number(cart.discount_total) > 0) {
@@ -133,6 +133,29 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
       return lineItems;
     });
 
+    /**
+     * Add amount difference item to cart if amount difference is greater than 0
+     */
+    const addAmountDifferenceItem = fp.curry(function addAmountDifferenceItem(
+      totalPrice: number,
+      lineItems: ChargeItem[]
+    ) {
+      lineItems = fp.cloneDeep(lineItems);
+      const lineItemsTotal = fp.sumBy<ChargeItem>("price", lineItems);
+      const amountDifference = Number(lineItemsTotal) - Number(totalPrice);
+
+      if (amountDifference > 0) {
+        lineItems.push({
+          itemId: "amount_difference",
+          description: "Amount Difference",
+          price: amountDifference,
+          quantity: 1,
+          imageUrl: "",
+        });
+      }
+      return lineItems;
+    });
+
     function mapCartItemToChargeItem(item: CartLineItemDTO): ChargeItem {
       return {
         itemId: item.id,
@@ -147,13 +170,14 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
       fp.map(mapCartItemToChargeItem),
       addDiscountItem(cart),
       addShipingItem(cart),
+      addAmountDifferenceItem(totalPrice),
       fp.sortBy<ChargeItem>("itemId")
     )(cart.items);
 
     return result;
-  }
+  });
 
-  private buildCheckoutRequest(cart: CartDTO): ChargeRequest {
+  private buildCheckoutRequest(cart: CartDTO, totalPrice: number): ChargeRequest {
     const { merchantCode, returnUrl } = this.options_;
     const request: ChargeRequest = {
       merchantCode,
@@ -163,11 +187,11 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
       customerName: cart.shipping_address.first_name + " " + cart.shipping_address.last_name,
       customerProfileId: cart.customer_id,
       language: "ar-eg",
-      chargeItems: this.getCheckoutItems(cart),
+      chargeItems: this.getCheckoutItems(totalPrice, cart),
       returnUrl,
       orderWebHookUrl: `${BACKEND_URL}/admin/hooks/payment/${FawryProviderService.identifier}_fawry`,
       authCaptureModePayment: false,
-      signature: this.generateSignature(cart),
+      signature: this.generateSignature(cart, totalPrice),
     };
 
     return request;
@@ -175,11 +199,12 @@ export default class FawryProviderService extends AbstractPaymentProvider<Option
 
   async initiatePayment({
     context,
+    amount,
   }: CreatePaymentProviderSession): Promise<PaymentProviderError | PaymentProviderSessionResponse> {
     const activityId = this.logger_.activity(
       `⚡🔵 Fawry (initiatePayment): Initiating a payment for cart: ${(context.extra.cart as CartDTO).id}`
     );
-    const checkoutRequest = this.buildCheckoutRequest(context.extra.cart as CartDTO);
+    const checkoutRequest = this.buildCheckoutRequest(context.extra.cart as CartDTO, Number(amount));
 
     try {
       const response = await axios.post(`${this.options_.baseUrl}/fawrypay-api/api/payments/init`, checkoutRequest, {
